@@ -1,0 +1,25 @@
+{
+  "budget_tokens": 4096,
+  "token_count": 13,
+  "saturation": 0.0032,
+  "entries": [
+    {
+      "id": "abc123",
+      "slot": "decision",
+      "content": "chose Rust for the core crates",
+      "tokens": 6,
+      "score": 0.92,
+      "resolution": "full",
+      "committed_at": "2026-06-21T00:12:00Z"
+    },
+    {
+      "id": "def456",
+      "slot": "constraint",
+      "content": "must not flood the prompt",
+      "tokens": 7,
+      "score": 0.88,
+      "resolution": "full",
+      "committed_at": "2026-06-21T00:13:00Z"
+    }
+  ]
+}

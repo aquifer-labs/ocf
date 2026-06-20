@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aquifer-labs.github.io/ocf/schema/schema.schema.json",
+  "title": "OCF Schema Declaration",
+  "type": "object",
+  "required": ["ocf_version", "slots", "budget_tokens"],
+  "properties": {
+    "ocf_version": { "type": "string" },
+    "slots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    },
+    "budget_tokens": { "type": "integer", "minimum": 1 },
+    "eviction": { "type": "string", "enum": ["lowest-score", "oldest", "manual"] }
+  },
+  "additionalProperties": false
+}

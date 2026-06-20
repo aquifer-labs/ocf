@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://aquifer-labs.github.io/ocf/schema/snapshot.schema.json",
+  "title": "OCF Working Snapshot",
+  "type": "object",
+  "required": ["budget_tokens", "token_count", "entries"],
+  "properties": {
+    "budget_tokens": { "type": "integer", "minimum": 1 },
+    "token_count": { "type": "integer", "minimum": 0 },
+    "saturation": { "type": "number", "minimum": 0 },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "slot", "content", "tokens", "score", "committed_at"],
+        "properties": {
+          "id": { "type": "string" },
+          "slot": { "type": "string" },
+          "content": { "type": "string" },
+          "tokens": { "type": "integer", "minimum": 0 },
+          "score": { "type": "number" },
+          "resolution": { "type": "string", "enum": ["full", "compressed", "pointer"] },
+          "unit_ref": { "type": "string" },
+          "committed_at": { "type": "string", "format": "date-time" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
