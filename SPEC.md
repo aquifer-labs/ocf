@@ -91,10 +91,33 @@ rejected** decisions, so an importer trusts the right thing and can see what was
   re-qualifying.
 - `qualify.jsonl` is advisory: it explains the snapshot but is not required to reconstruct it.
 
+## Human control over backend-stored memory
+
+OCF deliberately separates the **bulk memory units** (facts / documents / embeddings, which may live
+in a vector database referenced by `unit_source` + `unit_refs`, e.g. `"qdrant"` or `"sqlite-vec"`)
+from the **control layer** (`schema.json` + `snapshot.json`). The control layer is small and
+human-readable, so an operator can audit and edit — by hand — exactly what the agent holds in force
+and how it is governed, even when the underlying memory is a database. A runtime SHOULD treat an
+operator's edits to `schema.json` / `snapshot.json` as authoritative on the next import.
+
 ## Prior art & relationships
 
-- **ACC / CCS** (arXiv:2601.11653) — the algorithm OCF serializes; OCF is its portable on-disk form.
-- **Portable AI Memory, AMP, OAMP, content-addressed grains** — unit-layer formats OCF composes
-  with via `unit_source` / `unit_refs`.
-- **W3C AI-Agent-Memory-Interop** — the encryption / identity envelope; an OCF bundle is a payload.
-- **MCP / ARD / OKF** — adjacent stack layers (*do* / *discover* / *organizational knowledge*).
+- **ACC / CCS** — Bousetouane, *AI Agents Need Memory Control Over More Context*
+  ([arXiv:2601.11653](https://arxiv.org/abs/2601.11653)). The algorithm OCF serializes; OCF is its
+  portable on-disk form.
+- **Working-memory models** — *ClawVM* (harness-managed virtual memory, typed pages) and *AMV-L*
+  (value-driven lifecycle tiers) formalize the bounded working set, but ship no portable format.
+- **Portable Agent Memory** ([arXiv:2605.11032](https://arxiv.org/abs/2605.11032)) — a five-component
+  portable memory with cryptographic provenance; its *working* component is a flat list and it lists
+  temporal validity as future work, so it does not cover OCF's bounded snapshot + qualify log.
+- **Unit-layer formats** OCF composes with via `unit_source` / `unit_refs`:
+  [Portable AI Memory](https://portable-ai-memory.org),
+  [AMP](https://github.com/agentmemoryprotocol/agentmemoryprotocol),
+  [OAMP](https://github.com/deep-thinking-lab/open-agent-memory-protocol),
+  [MemoryGrain / OMS](https://memorygrain.org), and plain files.
+- **[W3C AI-Agent-Memory-Interop](https://www.w3.org/community/ai-agent-memory-interop/)** — the
+  encryption / identity envelope; an OCF bundle is a payload inside it.
+- **Adjacent stack layers** —
+  [OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)
+  (*what an organization knows*), [MCP](https://modelcontextprotocol.io) (*what an agent can do*),
+  [ARD](https://github.com/ards-project/ard-spec) (*where to find tools*).
