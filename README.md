@@ -93,6 +93,19 @@ check-jsonschema --schemafile schema/schema.schema.json   examples/minimal.ocf/s
 check-jsonschema --schemafile schema/snapshot.schema.json examples/minimal.ocf/snapshot.json
 ```
 
+## Conformance suite
+
+[`conformance/`](conformance/) is a language-neutral test suite — run it to prove a reader/writer
+handles OCF correctly. It checks both the JSON-Schema structure and the cross-file invariants the
+spec states but JSON Schema cannot express (budgets match, `token_count` equals the entry-token sum,
+every entry slot is declared), with positive bundles plus structural and semantic negative cases
+(run in CI on every push):
+
+```bash
+pip install 'jsonschema>=4.18'
+python3 conformance/run.py
+```
+
 ## Status
 
 `v0.1` draft — deliberately minimal. Spec text under CC-BY-4.0; schemas and examples under Apache-2.0.

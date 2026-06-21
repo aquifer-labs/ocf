@@ -1,0 +1,10 @@
+{
+  "ocf_version": "0.1",
+  "slots": [
+    {
+      "name": "decision"
+    }
+  ],
+  "budget_tokens": 4096,
+  "eviction": "random"
+}

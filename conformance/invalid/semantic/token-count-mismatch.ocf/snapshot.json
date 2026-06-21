@@ -1,0 +1,14 @@
+{
+  "budget_tokens": 4096,
+  "token_count": 99,
+  "entries": [
+    {
+      "id": "a",
+      "slot": "decision",
+      "content": "x",
+      "tokens": 6,
+      "score": 0.5,
+      "committed_at": "2026-06-21T00:12:00Z"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "budget_tokens": 2048,
+  "token_count": 5,
+  "saturation": 0.0024,
+  "entries": [
+    {
+      "id": "n1",
+      "slot": "decision",
+      "content": "inline unit source needs no external store",
+      "tokens": 5,
+      "score": 0.7,
+      "resolution": "full",
+      "committed_at": "2026-06-21T00:00:30Z"
+    }
+  ]
+}

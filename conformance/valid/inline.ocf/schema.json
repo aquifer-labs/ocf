@@ -1,0 +1,13 @@
+{
+  "ocf_version": "0.1",
+  "slots": [
+    {
+      "name": "decision"
+    },
+    {
+      "name": "task-state"
+    }
+  ],
+  "budget_tokens": 2048,
+  "eviction": "oldest"
+}
