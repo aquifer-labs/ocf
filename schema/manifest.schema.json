@@ -12,7 +12,18 @@
       "type": "string",
       "description": "inline | pam | amp | oamp | artesian | files | ..."
     },
-    "unit_refs": { "type": "array", "items": { "type": "string" } }
+    "unit_refs": { "type": "array", "items": { "type": "string" } },
+    "session": {
+      "type": "object",
+      "description": "Optional work-session identity for cross-agent handoff. A resumable bundle is addressed by (user_id, session_id, task_id); agent_id changes on handoff and is recorded in handed_off_from.",
+      "properties": {
+        "session_id": { "type": "string", "description": "stable id for this work session" },
+        "task_id": { "type": "string", "description": "the task being worked" },
+        "user_id": { "type": "string", "description": "owning user / tenant" },
+        "handed_off_from": { "type": "string", "description": "agent_id of the runtime that last committed this bundle" }
+      },
+      "additionalProperties": false
+    }
   },
   "additionalProperties": false
 }

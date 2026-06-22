@@ -1,0 +1,13 @@
+{
+  "ocf_version": "0.1",
+  "agent_id": "claude-code",
+  "created": "2026-06-21T00:10:00Z",
+  "unit_source": "artesian",
+  "unit_refs": ["aquifer://node/handoff-demo"],
+  "session": {
+    "session_id": "sess-7f3a",
+    "task_id": "fix-failing-tests",
+    "user_id": "user-a",
+    "handed_off_from": "codex"
+  }
+}

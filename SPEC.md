@@ -33,6 +33,7 @@ JSON Schemas for each file live in [`schema/`](schema/).
 | `created` | date-time | ✓ | RFC 3339 |
 | `unit_source` | string | ✓ | `inline`, or the unit layer referenced: `pam` / `amp` / `oamp` / `artesian` / `files` |
 | `unit_refs` | string[] |  | references into the unit store (when not `inline`) |
+| `session` | object |  | optional work-session identity for cross-agent handoff — `{ session_id, task_id, user_id, handed_off_from }` (see [Cross-agent session handoff](#cross-agent-session-handoff)) |
 
 ## 2. Schema Declaration — `schema.json`
 
@@ -90,6 +91,56 @@ rejected** decisions, so an importer trusts the right thing and can see what was
 - Entries in `snapshot.json` are already qualified; on import a runtime SHOULD restore them without
   re-qualifying.
 - `qualify.jsonl` is advisory: it explains the snapshot but is not required to reconstruct it.
+
+## Cross-agent session handoff
+
+OCF's reason to exist is *resume rather than re-retrieve* — and the sharpest case is **resuming on a
+different runtime**. A user working a task in one agent (say Codex in an IDE) should be able to switch
+to another (say Claude Code), state the task, and continue from exactly where the first agent stopped,
+with the committed working state intact. The OCF bundle is precisely that portable session:
+`snapshot.json` is the committed working state to restore, and `qualify.jsonl` is the decision trail
+that explains it.
+
+### Addressing (multi-dimensional)
+
+A single "current task per user" key is not enough: real deployments run **many users, each with many
+concurrent agents, each on multiple tasks**. A resumable bundle is therefore addressed by the tuple
+
+```
+(user_id, session_id, task_id)   # who · which work session · which task
+```
+
+carried in `manifest.session`. `agent_id` is deliberately **not** part of the address — it identifies
+the runtime that *produced* the bundle and changes on handoff (recorded in `session.handed_off_from`).
+That is what makes the handoff cross-agent: the resuming runtime matches on `(user, session, task)`,
+not on which agent wrote it. The tuple keeps concurrent users/agents/tasks from colliding; the unit
+layer (`unit_source` + `unit_refs`, e.g. a Qdrant / sqlite-vec store) handles concurrent reads and
+writes through its own tenancy.
+
+### Resume protocol
+
+1. **Checkpoint (producer).** The active runtime keeps the bundle for `(user, session, task)` current —
+   appending governance decisions to `qualify.jsonl` and updating `snapshot.json` as entries are
+   committed or evicted. It SHOULD checkpoint before yielding (on pause, token exhaustion, or a
+   compaction boundary), setting `session.handed_off_from = agent_id`.
+2. **Address (consumer).** A different runtime resolves the bundle by `(user_id, session_id, task_id)`.
+3. **Restore.** It loads `snapshot.json` and restores the entries **without re-qualifying** (they are
+   already committed — see *Compatibility & resume*), after checking `schema.json` compatibility. It MAY
+   read the tail of `qualify.jsonl` to understand the most recent admit/reject decisions, and MAY
+   hydrate `pointer` / `unit_ref` entries from the referenced unit layer.
+4. **Continue.** The runtime proceeds from the restored state — no replay of the original transcript, no
+   re-retrieval of the whole corpus.
+
+A runtime that cannot satisfy `schema.json` (incompatible slots / budget) MAY refuse the resume rather
+than silently degrade.
+
+### Reference implementation
+
+[Artesian](https://github.com/aquifer-labs/artesian) implements this handoff: it writes OCF bundles
+keyed by `(user, session, task)` and exposes `artesian handoff <session>` / a `memory.session.resume`
+MCP tool that restores the committed snapshot for a new agent. A session-start hook can auto-resume the
+bundle so a user only has to name the task. OCF is the portable contract; an implementation remains
+free to store the unit layer however it likes.
 
 ## Human control over backend-stored memory
 
