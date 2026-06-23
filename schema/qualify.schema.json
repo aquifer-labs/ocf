@@ -8,6 +8,10 @@
     "ts": { "type": "string", "format": "date-time" },
     "unit_ref": { "type": "string" },
     "admitted": { "type": "boolean" },
+    "decision": {
+      "type": "string",
+      "enum": ["admit", "reject", "promote", "merge", "supersede", "decay", "archive", "evict"]
+    },
     "slot": { "type": ["string", "null"] },
     "score": { "type": "number" },
     "reason": { "type": "string" }

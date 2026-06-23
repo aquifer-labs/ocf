@@ -70,6 +70,10 @@ Each entry:
 | `resolution` | string |  | `full` \| `compressed` \| `pointer` (default `full`) |
 | `unit_ref` | string |  | reference into the unit layer |
 | `committed_at` | date-time | ✓ |  |
+| `last_access` | date-time |  | last time this entry was retrieved — drives recency decay |
+| `access_count` | integer |  | times retrieved — reinforcement signal that resists decay/eviction |
+| `retrieval_strength` | number |  | soft-dampening multiplier applied to `score` **at retrieval** (default `1.0`); decay lowers it and access raises it, **without** mutating the committed `score` (storage ≠ retrieval strength) |
+| `state` | string |  | `active` (default) \| `archived` — archived entries are retained and still `unit_ref`-resolvable, but excluded from default retrieval until restored |
 
 ## 4. Qualify Log — `qualify.jsonl`
 
@@ -80,10 +84,56 @@ rejected** decisions, so an importer trusts the right thing and can see what was
 |---|---|:--:|---|
 | `ts` | date-time | ✓ |  |
 | `unit_ref` | string | ✓ | the unit considered |
-| `admitted` | boolean | ✓ |  |
-| `slot` | string\|null |  | the slot it was filed into (`null` if rejected) |
+| `admitted` | boolean | ✓ | whether the unit is in force after this decision |
+| `decision` | string |  | the governance action: `admit` \| `reject` \| `promote` \| `merge` \| `supersede` \| `decay` \| `archive` \| `evict` (defaults to `admit`/`reject` per `admitted` when absent) |
+| `slot` | string\|null |  | the slot it was filed into (`null` if rejected/evicted) |
 | `score` | number | ✓ |  |
-| `reason` | string |  | e.g. `qualified`, `below relevance threshold (0.18 < 0.20)`, `redundant`, `superseded` |
+| `reason` | string |  | e.g. `qualified`, `below relevance threshold (0.18 < 0.20)`, `redundant`, `superseded by <id>`, `decayed (retrieval_strength 0.22)`, `archived (LRU, unused 90d)`, `evicted (budget saturated)` |
+
+The qualify log records **admission and removal alike** — every decay-driven archive, supersession, and
+eviction is appended with its `decision` and `reason`, so *forgetting is as explainable and portable as
+remembering*. A runtime SHOULD never silently drop a committed unit without a qualify entry.
+
+## Aging, decay & eviction
+
+A long-running store accumulates stale, redundant, and unused entries. OCF separates **storage strength**
+from **retrieval strength** (a cognitive-memory distinction): an entry is not deleted just because it is
+old — its *accessibility* is dampened, and only a deliberate, logged decision removes it.
+
+- **Recency decay.** A runtime SHOULD derive each entry's `retrieval_strength` from `last_access` and
+  `access_count` — e.g. an exponential `e^(-λ·Δt)` on time-since-last-access, bounded below, with a boost
+  per access — and rank by `score · retrieval_strength` at retrieval. Decay never mutates the committed
+  `score`; it only changes what surfaces first. Each retrieval updates `last_access` / `access_count`.
+- **Write-time reconciliation.** When a new unit is semantically close to an existing entry, the runtime
+  reconciles instead of duplicating: `admit` (new) · `merge` (fold in) · `supersede` (replace a
+  contradicted entry, keeping a pointer to the prior) · `noop`. The chosen action is logged in qualify.
+- **Eviction.** When the budget saturates or a policy fires (`oldest` · `lowest-score` · lowest
+  `retrieval_strength` (LRU) · TTL · low salience), entries are first **soft-archived** (`state =
+  archived`, retained and still `unit_ref`-resolvable) before any hard delete — so an evicted entry can
+  be restored and the decision is reversible. Hard deletion is a separate, explicit step.
+- **Governance.** Every decay-archive, supersession, and eviction is appended to `qualify.jsonl`. Aging is
+  a *logged, reviewable, portable* part of the standard — not a silent background mutation of a private store.
+
+## Dreams (offline consolidation)
+
+A **dream** is an offline pass that reorganizes a store into a cleaner one: duplicates merged,
+stale/contradicted entries replaced with the latest value, latent patterns surfaced as new entries, and
+unused entries decayed or archived. OCF standardizes the dream as a **bundle-to-bundle** operation:
+
+- **Inputs:** one existing OCF bundle (the committed state) plus zero or more session transcripts /
+  short-term signal sources (referenced; redacted as needed).
+- **Output:** a **new** OCF bundle. The input is **never mutated** — the output is reviewed and then
+  *adopted* (attached to future sessions in place of, or alongside, the input) or *discarded*. This
+  review-then-adopt gate is mandatory; a dream never silently overwrites the live store.
+- **Promotion ranking** SHOULD weight multiple signals — frequency, relevance, query diversity, recency,
+  consolidation, conceptual richness — against thresholds before an entry is admitted to the output.
+- **Governance:** every promote / merge / drop / supersede / decay decision the dream makes is recorded in
+  the output bundle's `qualify.jsonl`. The dream's reasoning travels *with* the result, in the open format
+  — not locked inside a vendor pipeline or a free-text diary. Any other runtime can adopt or re-process it.
+- A dream MAY also emit a human-readable narrative (a "dream diary") as a separate artifact for review; the
+  diary never feeds promotion decisions.
+
+Run dreams on a schedule (e.g. nightly), on demand, or at a compaction boundary.
 
 ## Compatibility & resume
 

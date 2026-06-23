@@ -1,0 +1,5 @@
+{"ts":"2026-06-21T00:12:00Z","unit_ref":"abc123","admitted":true,"slot":"decision","score":0.92,"reason":"qualified"}
+{"ts":"2026-06-21T00:13:00Z","unit_ref":"def456","admitted":true,"slot":"constraint","score":0.88,"reason":"qualified"}
+{"ts":"2026-06-21T00:14:00Z","unit_ref":"xyz789","admitted":false,"slot":null,"score":0.18,"reason":"below relevance threshold (0.180 < 0.200)"}
+{"ts": "2026-06-23T02:00:01Z", "unit_ref": "inline://n1", "admitted": true, "decision": "decay", "score": 0.7, "reason": "decayed (retrieval_strength 0.62)"}
+{"ts": "2026-06-23T02:00:02Z", "unit_ref": "inline://n1", "admitted": false, "decision": "archive", "score": 0.7, "reason": "archived (LRU, unused 90d)"}

@@ -21,7 +21,11 @@
           "score": { "type": "number" },
           "resolution": { "type": "string", "enum": ["full", "compressed", "pointer"] },
           "unit_ref": { "type": "string" },
-          "committed_at": { "type": "string", "format": "date-time" }
+          "committed_at": { "type": "string", "format": "date-time" },
+          "last_access": { "type": "string", "format": "date-time" },
+          "access_count": { "type": "integer", "minimum": 0 },
+          "retrieval_strength": { "type": "number", "minimum": 0 },
+          "state": { "type": "string", "enum": ["active", "archived"] }
         },
         "additionalProperties": false
       }

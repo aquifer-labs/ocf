@@ -1,0 +1,11 @@
+{
+  "ocf_version": "0.1",
+  "slots": [
+    { "name": "decision", "description": "choices made and in force" },
+    { "name": "constraint", "description": "rules the agent must not violate" },
+    { "name": "fact", "description": "established facts about the world or task" },
+    { "name": "task-state", "description": "where the work stands and what is next" }
+  ],
+  "budget_tokens": 4096,
+  "eviction": "lowest-score"
+}

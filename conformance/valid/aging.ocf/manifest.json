@@ -1,0 +1,7 @@
+{
+  "ocf_version": "0.1",
+  "agent_id": "artesian-demo",
+  "created": "2026-06-21T00:44:00Z",
+  "unit_source": "artesian",
+  "unit_refs": ["aquifer://node/abc123", "aquifer://node/def456"]
+}
