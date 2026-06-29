@@ -9,6 +9,8 @@ Checks, in order:
 2. **Positive cases conform** — every bundle in ``examples/*.ocf`` and
    ``conformance/valid/*.ocf`` validates against the schemas *and* satisfies the
    cross-file semantic invariants the spec states but JSON Schema cannot express.
+   These include budget/token arithmetic, declared slots, and one current version
+   per effective ``(namespace, id)``.
 3. **Negative cases are rejected** — structural cases in
    ``conformance/invalid/structural/`` fail schema validation; semantic cases in
    ``conformance/invalid/semantic/*.ocf`` are structurally valid but break an
@@ -64,7 +66,17 @@ def schema_errors(kind: str, doc: object) -> list[str]:
     return [error.message for error in VALIDATORS[kind].iter_errors(doc)]
 
 
-def invariant_errors(schema: dict, snapshot: dict) -> list[str]:
+def _effective_namespace(manifest: dict, entry: dict) -> str:
+    namespace = entry.get("namespace")
+    if isinstance(namespace, str):
+        return namespace
+    default_namespace = manifest.get("default_namespace")
+    if isinstance(default_namespace, str):
+        return default_namespace
+    return "shared"
+
+
+def invariant_errors(manifest: dict, schema: dict, snapshot: dict) -> list[str]:
     """Cross-file semantic invariants from SPEC sections 2-3."""
     errors: list[str] = []
     slot_names = {slot.get("name") for slot in schema.get("slots", [])}
@@ -81,6 +93,20 @@ def invariant_errors(schema: dict, snapshot: dict) -> list[str]:
             errors.append(
                 f"entry {entry.get('id')!r} slot {entry.get('slot')!r} is not a declared slot"
             )
+    seen_records: set[tuple[str, object]] = set()
+    for entry in entries:
+        record_id = entry.get("id")
+        key = (_effective_namespace(manifest, entry), record_id)
+        if record_id is None:
+            continue
+        if key in seen_records:
+            errors.append(
+                "stale version conflict: "
+                f"entry {record_id!r} in namespace {key[0]!r} appears more than once; "
+                "concurrent writes must be rejected or reconciled with merge/supersede"
+            )
+        else:
+            seen_records.add(key)
     saturation = snapshot.get("saturation")
     budget = schema.get("budget_tokens")
     if saturation is not None and isinstance(budget, int) and budget > 0:
@@ -109,8 +135,8 @@ def bundle_errors(path: Path) -> list[str]:
                 continue
             record = json.loads(line)
             errors += [f"qualify L{lineno}: {m}" for m in schema_errors("qualify", record)]
-    if isinstance(schema, dict) and isinstance(snapshot, dict):
-        errors += [f"invariant: {m}" for m in invariant_errors(schema, snapshot)]
+    if isinstance(manifest, dict) and isinstance(schema, dict) and isinstance(snapshot, dict):
+        errors += [f"invariant: {m}" for m in invariant_errors(manifest, schema, snapshot)]
     return errors
 
 

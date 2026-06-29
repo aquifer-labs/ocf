@@ -9,8 +9,8 @@ rejects OCF bundles correctly. It checks two layers:
   (Draft 2020-12).
 - **Semantics** — the cross-file invariants the [spec](../SPEC.md) states but JSON Schema cannot
   express: a snapshot's `budget_tokens` matches the schema's, `token_count` equals the sum of entry
-  tokens, `saturation` matches `token_count / budget_tokens`, and every entry's `slot` is one
-  declared in the schema.
+  tokens, `saturation` matches `token_count / budget_tokens`, every entry's `slot` is one declared
+  in the schema, and each effective `(namespace, id)` has only one current committed version.
 
 ## Run
 

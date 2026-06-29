@@ -16,6 +16,29 @@
         "properties": {
           "id": { "type": "string" },
           "slot": { "type": "string" },
+          "namespace": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Project/partition key. Omitted entries inherit manifest.default_namespace, or shared when the manifest has none."
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "default": 1,
+            "description": "Monotonic per-record version used for optimistic-lock conflict detection."
+          },
+          "author_id": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Writer identity for provenance; distinct from routing, session, or namespace keys."
+          },
+          "access_list": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true,
+            "default": [],
+            "description": "Additional namespace/user principals allowed to read this entry; namespace and shared visibility still apply."
+          },
           "content": { "type": "string" },
           "tokens": { "type": "integer", "minimum": 0 },
           "score": { "type": "number" },

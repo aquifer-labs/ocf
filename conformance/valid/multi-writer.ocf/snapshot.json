@@ -1,0 +1,44 @@
+{
+  "budget_tokens": 4096,
+  "token_count": 23,
+  "saturation": 0.0056,
+  "entries": [
+    {
+      "id": "decision-db",
+      "slot": "decision",
+      "namespace": "project-alpha",
+      "version": 3,
+      "author_id": "alice",
+      "access_list": ["project-beta", "user:bob"],
+      "content": "Use sqlite-vec for the local prototype.",
+      "tokens": 7,
+      "score": 0.83,
+      "resolution": "full",
+      "committed_at": "2026-06-29T09:00:00Z"
+    },
+    {
+      "id": "shared-recall",
+      "slot": "constraint",
+      "namespace": "shared",
+      "version": 1,
+      "author_id": "policy",
+      "content": "Shared records are visible during namespace recall.",
+      "tokens": 8,
+      "score": 0.74,
+      "resolution": "full",
+      "committed_at": "2026-06-29T09:01:00Z"
+    },
+    {
+      "id": "decision-db",
+      "slot": "decision",
+      "namespace": "project-beta",
+      "version": 1,
+      "author_id": "bob",
+      "content": "Keep a separate project-beta database decision.",
+      "tokens": 8,
+      "score": 0.7,
+      "resolution": "full",
+      "committed_at": "2026-06-29T09:02:00Z"
+    }
+  ]
+}

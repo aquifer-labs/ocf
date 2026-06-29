@@ -6,12 +6,18 @@
   "required": ["ts", "unit_ref", "admitted", "score"],
   "properties": {
     "ts": { "type": "string", "format": "date-time" },
+    "record_id": { "type": "string", "description": "Snapshot entry id affected by this decision, when known." },
+    "namespace": { "type": "string", "minLength": 1 },
+    "author_id": { "type": "string", "minLength": 1 },
     "unit_ref": { "type": "string" },
     "admitted": { "type": "boolean" },
     "decision": {
       "type": "string",
       "enum": ["admit", "reject", "promote", "merge", "supersede", "decay", "archive", "evict"]
     },
+    "expected_version": { "type": "integer", "minimum": 1 },
+    "actual_version": { "type": "integer", "minimum": 1 },
+    "result_version": { "type": "integer", "minimum": 1 },
     "slot": { "type": ["string", "null"] },
     "score": { "type": "number" },
     "reason": { "type": "string" }

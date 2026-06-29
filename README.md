@@ -29,6 +29,15 @@ Memory, AMP, OAMP, content-addressed grains, plain files. **None** standardizes 
 (arXiv:2601.11653) formalizes this state — *"retrieved text is not equivalent to a controlled
 internal state"* — but publishes no portable format. OCF is that missing layer.
 
+## OCF as the hard-state layer
+
+The current agent-protocol landscape is strongest at transport, discovery, tools, resources, and
+agent-to-agent messaging. Those protocols deliberately do not own persistent, committed state: what is
+currently in force, who wrote it, how it is partitioned, and why it was admitted. OCF occupies that
+hard-state layer. It is a portable format for governed state beneath the message layer, not a
+replacement for MCP, A2A, ACP, or similar protocols. Those protocols can expose, move, or operate on an
+OCF bundle; OCF defines the inspectable state payload they do not standardize.
+
 ## Three layers
 
 1. **Schema Declaration** (`schema.json`) — the typed slot contract + budget + eviction policy, so a
@@ -47,8 +56,9 @@ A bundle is a small, human-readable directory. See [`SPEC.md`](SPEC.md) and
 > them via `unit_source` + `unit_refs`. OCF adds only what nobody else ships — the bounded committed
 > snapshot and the qualify log — plus the schema contract that makes them checkable.
 
-OCF sits *above* MCP (an MCP tool can read an OCF bundle as a resource) and *inside* a W3C-style
-encrypted memory cell (OCF is the payload, not the envelope).
+OCF sits *beneath* MCP / A2A-style messaging as the committed-state payload (an MCP tool can expose an
+OCF bundle as a resource) and *inside* a W3C-style encrypted memory cell (OCF is the payload, not the
+envelope).
 
 ## Human control over backend-stored memory
 
@@ -98,8 +108,8 @@ check-jsonschema --schemafile schema/snapshot.schema.json examples/minimal.ocf/s
 [`conformance/`](conformance/) is a language-neutral test suite — run it to prove a reader/writer
 handles OCF correctly. It checks both the JSON-Schema structure and the cross-file invariants the
 spec states but JSON Schema cannot express (budgets match, `token_count` equals the entry-token sum,
-every entry slot is declared), with positive bundles plus structural and semantic negative cases
-(run in CI on every push):
+every entry slot is declared, and each effective `(namespace, id)` has one current version), with
+positive bundles plus structural and semantic negative cases (run in CI on every push):
 
 ```bash
 pip install 'jsonschema>=4.18'
@@ -108,4 +118,5 @@ python3 conformance/run.py
 
 ## Status
 
-`v0.1` draft — deliberately minimal. Spec text under CC-BY-4.0; schemas and examples under Apache-2.0.
+`v0.2` draft — deliberately minimal. `v0.1` bundles remain valid; omitted multi-writer fields use the
+defaults in the spec. Spec text under CC-BY-4.0; schemas and examples under Apache-2.0.

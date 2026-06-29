@@ -1,6 +1,6 @@
 <!-- SPDX-License-Identifier: CC-BY-4.0 -->
 
-# Open Cognitive Format (OCF) — Specification v0.1
+# Open Cognitive Format (OCF) — Specification v0.2
 
 > Every existing format stores facts. None standardizes what an agent holds in force right now — a
 > bounded, schema-governed working set with the governance trail that explains why each entry was
@@ -9,6 +9,18 @@
 
 OCF standardizes **only** the committed-working-state layer. It *references* the memory **unit**
 layer (facts/records) maintained by other formats (PAM, AMP, OAMP, files) rather than redefining it.
+
+## OCF as the hard-state layer
+
+Protocol taxonomies for agents mostly cover transport, discovery, resource exposure, tool invocation,
+and agent-to-agent messaging. They generally leave persistent committed state outside their contract:
+the bounded working set that is in force, who wrote it, how it is partitioned, and the governance trail
+that made it valid. OCF is the format for that hard-state layer.
+
+OCF is therefore not a competitor to MCP, A2A, ACP, or similar protocols. It composes with them: a
+message protocol can discover, transmit, hydrate, or mutate an OCF bundle, while OCF defines the
+portable state payload beneath the message layer. The boundary is intentional: protocols move requests
+and resources; OCF serializes committed, governed state.
 
 ## Bundle
 
@@ -28,9 +40,10 @@ JSON Schemas for each file live in [`schema/`](schema/).
 
 | field | type | req | notes |
 |---|---|:--:|---|
-| `ocf_version` | string | ✓ | `0.1`; readers accept the same major version |
+| `ocf_version` | string | ✓ | `0.2` for bundles using the multi-writer fields; `0.1` bundles remain valid with defaults; readers accept the same major version |
 | `agent_id` | string |  | producer id |
 | `created` | date-time | ✓ | RFC 3339 |
+| `default_namespace` | string |  | namespace/project inherited by entries that omit `namespace`; default `shared` |
 | `unit_source` | string | ✓ | `inline`, or the unit layer referenced: `pam` / `amp` / `oamp` / `artesian` / `files` |
 | `unit_refs` | string[] |  | references into the unit store (when not `inline`) |
 | `session` | object |  | optional work-session identity for cross-agent handoff — `{ session_id, task_id, user_id, handed_off_from }` (see [Cross-agent session handoff](#cross-agent-session-handoff)) |
@@ -64,6 +77,10 @@ Each entry:
 |---|---|:--:|---|
 | `id` | string | ✓ | stable within the bundle |
 | `slot` | string | ✓ | one of the schema slots |
+| `namespace` | string |  | project/partition key; default `manifest.default_namespace`, else `shared` |
+| `version` | integer |  | monotonic per-record optimistic-lock counter; default `1` |
+| `author_id` | string |  | writer provenance, separate from `agent_id`, session ids, routing keys, or namespace |
+| `access_list` | string[] |  | additional namespace/user principals allowed to read; default `[]` |
 | `content` | string | ✓ | may be empty when `resolution = pointer` |
 | `tokens` | integer | ✓ |  |
 | `score` | number | ✓ | committed value (drives eviction) |
@@ -75,6 +92,67 @@ Each entry:
 | `retrieval_strength` | number |  | soft-dampening multiplier applied to `score` **at retrieval** (default `1.0`); decay lowers it and access raises it, **without** mutating the committed `score` (storage ≠ retrieval strength) |
 | `state` | string |  | `active` (default) \| `archived` — archived entries are retained and still `unit_ref`-resolvable, but excluded from default retrieval until restored |
 
+### Multi-writer state
+
+OCF records enough hard-state metadata for shared stores without turning the format into a locking
+service.
+
+- **Namespace.** The effective namespace of an entry is `entry.namespace`, else
+  `manifest.default_namespace`, else `shared`. The namespace is the project/partition key. Default
+  recall for a request in namespace `N` is `N ∪ shared`: return entries whose effective namespace is
+  `N`, entries whose effective namespace is `shared`, and entries whose `access_list` explicitly names
+  the requesting namespace or principal. This matches database-level security patterns where the
+  query policy is "visible to my namespace plus shared records."
+- **Author.** `author_id` records who authored the state change. It is provenance, not an addressing
+  key; it must survive handoff even when `agent_id` or orchestration changes.
+- **Version.** `version` is a monotonic counter for the current entry identified by
+  `(effective namespace, id)`. Omitted `version` means `1`, so existing bundles import unchanged.
+  A snapshot MUST contain at most one current committed entry for each `(effective namespace, id)`.
+
+Optimistic-lock conflict rule:
+
+1. A writer that updates an existing entry MUST supply the version it read.
+2. The write is accepted only when the supplied version equals the current committed `version`; the
+   committed replacement increments `version` by one.
+3. If the supplied version is stale, the runtime MUST NOT silently overwrite the current entry. It
+   either rejects the write and appends a `qualify.jsonl` rejection with the expected/current versions,
+   or performs an explicit merge/supersede and logs that decision in `qualify.jsonl`.
+
+Example stale-write trace:
+
+```json
+{
+  "id": "decision-db",
+  "slot": "decision",
+  "namespace": "project-alpha",
+  "version": 3,
+  "author_id": "alice",
+  "content": "Use sqlite-vec for the local prototype.",
+  "tokens": 8,
+  "score": 0.83,
+  "committed_at": "2026-06-29T09:00:00Z"
+}
+```
+
+If another writer read version `2` and tries to overwrite this record, the stale attempt is rejected:
+
+```json
+{
+  "ts": "2026-06-29T09:05:00Z",
+  "record_id": "decision-db",
+  "namespace": "project-alpha",
+  "author_id": "bob",
+  "unit_ref": "inline://attempt-db",
+  "admitted": false,
+  "decision": "reject",
+  "expected_version": 2,
+  "actual_version": 3,
+  "slot": null,
+  "score": 0.0,
+  "reason": "stale version (expected 2, current 3)"
+}
+```
+
 ## 4. Qualify Log — `qualify.jsonl`
 
 One JSON object per line, appended in order — the governance trail. It records **admitted and
@@ -83,9 +161,15 @@ rejected** decisions, so an importer trusts the right thing and can see what was
 | field | type | req | notes |
 |---|---|:--:|---|
 | `ts` | date-time | ✓ |  |
+| `record_id` | string |  | snapshot entry id affected by this decision, when known |
+| `namespace` | string |  | effective namespace affected by this decision |
+| `author_id` | string |  | writer responsible for the attempted or committed decision |
 | `unit_ref` | string | ✓ | the unit considered |
 | `admitted` | boolean | ✓ | whether the unit is in force after this decision |
 | `decision` | string |  | the governance action: `admit` \| `reject` \| `promote` \| `merge` \| `supersede` \| `decay` \| `archive` \| `evict` (defaults to `admit`/`reject` per `admitted` when absent) |
+| `expected_version` | integer |  | version supplied by an optimistic-lock writer |
+| `actual_version` | integer |  | current version observed by the runtime |
+| `result_version` | integer |  | version committed by an accepted merge/supersede |
 | `slot` | string\|null |  | the slot it was filed into (`null` if rejected/evicted) |
 | `score` | number | ✓ |  |
 | `reason` | string |  | e.g. `qualified`, `below relevance threshold (0.18 < 0.20)`, `redundant`, `superseded by <id>`, `decayed (retrieval_strength 0.22)`, `archived (LRU, unused 90d)`, `evicted (budget saturated)` |

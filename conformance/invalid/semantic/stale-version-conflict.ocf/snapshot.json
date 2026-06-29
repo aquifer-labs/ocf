@@ -1,0 +1,29 @@
+{
+  "budget_tokens": 1024,
+  "token_count": 12,
+  "saturation": 0.0117,
+  "entries": [
+    {
+      "id": "decision-db",
+      "slot": "decision",
+      "namespace": "project-alpha",
+      "version": 2,
+      "author_id": "alice",
+      "content": "Use sqlite-vec for the local prototype.",
+      "tokens": 6,
+      "score": 0.83,
+      "committed_at": "2026-06-29T09:00:00Z"
+    },
+    {
+      "id": "decision-db",
+      "slot": "decision",
+      "namespace": "project-alpha",
+      "version": 2,
+      "author_id": "bob",
+      "content": "Use Postgres for the local prototype.",
+      "tokens": 6,
+      "score": 0.82,
+      "committed_at": "2026-06-29T09:01:00Z"
+    }
+  ]
+}

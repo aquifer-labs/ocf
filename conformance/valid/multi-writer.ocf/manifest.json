@@ -1,0 +1,8 @@
+{
+  "ocf_version": "0.2",
+  "agent_id": "conformance-multi-writer",
+  "created": "2026-06-29T09:00:00Z",
+  "default_namespace": "project-alpha",
+  "unit_source": "inline",
+  "unit_refs": ["inline://decision-db", "inline://shared-recall"]
+}

@@ -1,0 +1,3 @@
+
+# fastembed model cache (runtime; never commit — multi-hundred-MB blobs)
+.fastembed_cache/

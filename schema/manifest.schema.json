@@ -8,6 +8,12 @@
     "ocf_version": { "type": "string" },
     "agent_id": { "type": "string" },
     "created": { "type": "string", "format": "date-time" },
+    "default_namespace": {
+      "type": "string",
+      "minLength": 1,
+      "default": "shared",
+      "description": "Default namespace/project for snapshot entries that omit namespace. If absent, the effective default is shared."
+    },
     "unit_source": {
       "type": "string",
       "description": "inline | pam | amp | oamp | artesian | files | ..."

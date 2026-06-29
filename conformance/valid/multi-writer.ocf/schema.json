@@ -1,0 +1,9 @@
+{
+  "ocf_version": "0.2",
+  "slots": [
+    { "name": "decision" },
+    { "name": "constraint" }
+  ],
+  "budget_tokens": 4096,
+  "eviction": "lowest-score"
+}
